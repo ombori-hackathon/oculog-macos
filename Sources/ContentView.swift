@@ -5,6 +5,10 @@ struct ContentView: View {
     @State private var tableSelection: ConditionLog.ID?
     @State private var chartHeight: CGFloat = 0
 
+    // Sort preference persistence
+    @AppStorage("sortField") private var storedSortField: String = SortField.date.rawValue
+    @AppStorage("sortOrder") private var storedSortOrder: String = SortOrder.desc.rawValue
+
     private let backgroundColor = Color(red: 0.1, green: 0.1, blue: 0.15)
     private let accentCyan = Color(red: 0.0, green: 0.8, blue: 0.8)
     private let minChartHeight: CGFloat = 150
@@ -15,6 +19,14 @@ struct ContentView: View {
             return weather.locationName
         }
         return nil
+    }
+
+    private var apiStatusColor: Color {
+        switch appState.apiStatus {
+        case "healthy": return .green
+        case "offline": return .red
+        default: return .gray  // "Checking..." or unknown
+        }
     }
 
     var body: some View {
@@ -47,11 +59,11 @@ struct ContentView: View {
 
                     Spacer()
 
+                    // API status dot only (green=healthy, red=offline, gray=checking)
                     Circle()
-                        .fill(appState.apiStatus == "healthy" ? .green : .red)
-                        .frame(width: 12, height: 12)
-                    Text(appState.apiStatus)
-                        .foregroundStyle(.secondary)
+                        .fill(apiStatusColor)
+                        .frame(width: 10, height: 10)
+                        .help("API: \(appState.apiStatus)")
 
                     Button {
                         appState.authState.logout()
@@ -67,6 +79,9 @@ struct ContentView: View {
                 .background(.bar)
 
                 Divider()
+
+                // Loading indicator - always present to prevent layout jump
+                LoadingBar(isLoading: appState.isLoadingLogs)
 
                 // Error banner for fetch failures
                 if let error = appState.listError {
@@ -100,7 +115,7 @@ struct ContentView: View {
                         .background(backgroundColor)
                     } else {
                         // Chart section
-                        RatingTrendChartView(logs: appState.logs)
+                        RatingTrendChartView(logs: appState.logs, selectedLogId: tableSelection)
                             .frame(height: chartHeight)
 
                         // Resizable divider
@@ -114,12 +129,22 @@ struct ContentView: View {
                         VStack(spacing: 0) {
                             LogsTable(
                                 logs: appState.logs,
+                                sortField: appState.sortField,
+                                sortOrder: appState.sortOrder,
                                 onRowDoubleClick: { log in
                                     appState.openLogForm(editing: log)
                                 },
                                 onDelete: { log in
                                     Task {
                                         try? await appState.deleteLog(id: log.id)
+                                    }
+                                },
+                                onSort: { field in
+                                    Task {
+                                        await appState.setSort(field: field)
+                                        // Persist to AppStorage
+                                        storedSortField = appState.sortField.rawValue
+                                        storedSortOrder = appState.sortOrder.rawValue
                                     }
                                 },
                                 selection: $tableSelection
@@ -136,6 +161,14 @@ struct ContentView: View {
                 // Initialize chart height to 1/3 of content area
                 if chartHeight == 0 {
                     chartHeight = max(minChartHeight, (geometry.size.height - 100) / 3)
+                }
+
+                // Restore sort preferences from storage
+                if let field = SortField(rawValue: storedSortField) {
+                    appState.sortField = field
+                }
+                if let order = SortOrder(rawValue: storedSortOrder) {
+                    appState.sortOrder = order
                 }
             }
         }
@@ -199,5 +232,51 @@ struct ResizableDivider: View {
                         chartHeight = min(max(newHeight, minChartHeight), maxChartHeight)
                     }
             )
+    }
+}
+
+// MARK: - Loading Bar
+
+struct LoadingBar: View {
+    let isLoading: Bool
+
+    @State private var animationOffset: CGFloat = -1.0
+
+    private let accentCyan = Color(red: 0.0, green: 0.8, blue: 0.8)
+
+    var body: some View {
+        GeometryReader { geometry in
+            let barWidth = geometry.size.width * 0.3
+
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [accentCyan.opacity(0), accentCyan, accentCyan.opacity(0)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: barWidth, height: 3)
+                .offset(x: animationOffset * (geometry.size.width + barWidth) - barWidth / 2)
+                .opacity(isLoading ? 1 : 0)
+        }
+        .frame(height: 3)
+        .background(isLoading ? Color.gray.opacity(0.2) : Color.clear)
+        .onChange(of: isLoading) { _, newValue in
+            if newValue {
+                // Reset and start animation
+                animationOffset = -1.0
+                withAnimation(.linear(duration: 1.0).repeatForever(autoreverses: false)) {
+                    animationOffset = 1.0
+                }
+            }
+        }
+        .onAppear {
+            if isLoading {
+                withAnimation(.linear(duration: 1.0).repeatForever(autoreverses: false)) {
+                    animationOffset = 1.0
+                }
+            }
+        }
     }
 }

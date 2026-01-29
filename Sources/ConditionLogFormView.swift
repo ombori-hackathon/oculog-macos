@@ -149,7 +149,7 @@ struct ConditionLogFormView: View {
             // Footer with buttons
             footer
         }
-        .frame(width: 620, height: 850)
+        .frame(width: 520, height: 700)
         .background(backgroundColor)
         .onAppear(perform: populateFromEditingLog)
         .alert("Log Already Exists", isPresented: $showDuplicateDateAlert) {
@@ -167,8 +167,18 @@ struct ConditionLogFormView: View {
 
     private var header: some View {
         HStack {
-            Text(isEditMode ? "Edit Log" : "New Log")
-                .font(.title2.bold())
+            if isEditMode, let log = editingLog {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Edit Log")
+                        .font(.title2.bold())
+                    Text(log.formattedDate)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("New Log")
+                    .font(.title2.bold())
+            }
 
             Spacer()
 
@@ -187,18 +197,16 @@ struct ConditionLogFormView: View {
 
     private var dateAndLocationSection: some View {
         FormSection(title: "Date & Location", icon: "calendar") {
-            VStack(spacing: 16) {
-                // Large graphical date picker for accessibility
+            VStack(spacing: 12) {
+                // Date picker - no future dates allowed
                 DatePicker(
                     "Log Date",
                     selection: $logDate,
+                    in: ...Date(),  // Only today and earlier
                     displayedComponents: .date
                 )
                 .datePickerStyle(.graphical)
                 .labelsHidden()
-                .controlSize(.large)
-                .transformEffect(.init(scaleX: 1.3, y: 1.3))
-                .frame(minHeight: 350)
 
                 Divider()
 
@@ -233,7 +241,7 @@ struct ConditionLogFormView: View {
     private var symptomsSection: some View {
         FormSection(title: "Symptoms", icon: "eye") {
             VStack(spacing: 8) {
-                RatingSliderView(label: "Overall Rating", icon: "star.fill", value: $overallRating, isRequired: true)
+                RatingSliderView(label: "Overall Rating", icon: "star.fill", value: $overallRating, isRequired: true, highIsGood: true)
                 RatingSliderView(label: "Burning", icon: "flame", value: $burning, isRequired: true)
                 RatingSliderView(label: "Redness", icon: "eye", value: $redness, isRequired: true)
                 RatingSliderView(label: "Itching", icon: "hand.raised", value: $itching, isRequired: true)
@@ -250,7 +258,7 @@ struct ConditionLogFormView: View {
                 // Required fields
                 HoursInputView(label: "Screen Time", icon: "tv", value: $screenTimeHours, maxValue: 24, isRequired: true)
                 HoursInputView(label: "Sleep Hours", icon: "bed.double", value: $sleepHours, maxValue: 24, isRequired: true)
-                RatingSliderView(label: "Sleep Quality", icon: "moon.zzz", value: $sleepQuality, isRequired: true)
+                RatingSliderView(label: "Sleep Quality", icon: "moon.zzz", value: $sleepQuality, isRequired: true, highIsGood: true)
                 RatingSliderView(label: "Stress Level", icon: "brain.head.profile", value: $stressLevel, isRequired: true)
                 HoursInputView(label: "Outdoor Hours", icon: "sun.max", value: $outdoorHours, maxValue: 24, isRequired: true)
 

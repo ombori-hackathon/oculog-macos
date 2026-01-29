@@ -1,6 +1,35 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Sort Enums
+
+enum SortField: String, CaseIterable {
+    case date = "date"
+    case rating = "rating"
+    case city = "city"
+
+    var displayName: String {
+        switch self {
+        case .date: return "Date"
+        case .rating: return "Rating"
+        case .city: return "City"
+        }
+    }
+}
+
+enum SortOrder: String, CaseIterable {
+    case asc = "asc"
+    case desc = "desc"
+
+    var toggled: SortOrder {
+        self == .asc ? .desc : .asc
+    }
+
+    var arrowSymbol: String {
+        self == .asc ? "chevron.up" : "chevron.down"
+    }
+}
+
 // MARK: - Auth Models
 
 struct TokenResponse: Codable {

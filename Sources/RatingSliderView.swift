@@ -5,6 +5,7 @@ struct RatingSliderView: View {
     let icon: String
     @Binding var value: Int?
     var isRequired: Bool = false
+    var highIsGood: Bool = false  // If true, 10=green, 0=red (for quality ratings)
 
     private let accentCyan = Color(red: 0.0, green: 0.8, blue: 0.8)
 
@@ -58,12 +59,14 @@ struct RatingSliderView: View {
 
     private func colorForRating(_ rating: Int) -> Color {
         let ratio = Double(rating) / 10.0
-        if ratio < 0.3 {
-            return Color(red: 0.2, green: 0.8, blue: 0.4)
-        } else if ratio < 0.6 {
-            return Color(red: 0.9, green: 0.8, blue: 0.2)
+        let effectiveRatio = highIsGood ? (1.0 - ratio) : ratio  // Invert for quality ratings
+
+        if effectiveRatio < 0.3 {
+            return Color(red: 0.2, green: 0.8, blue: 0.4)  // Green
+        } else if effectiveRatio < 0.6 {
+            return Color(red: 0.9, green: 0.8, blue: 0.2)  // Yellow
         } else {
-            return Color(red: 0.9, green: 0.3, blue: 0.3)
+            return Color(red: 0.9, green: 0.3, blue: 0.3)  // Red
         }
     }
 }

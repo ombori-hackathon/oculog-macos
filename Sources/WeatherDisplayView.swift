@@ -13,37 +13,41 @@ struct WeatherDisplayView: View {
     }
 
     private var compactView: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             // Location
             if let location = weather.locationName {
                 Image(systemName: "location.fill")
+                    .font(.system(size: 14))
                 Text(location)
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.primary)
 
-                Text("|")
+                Text("·")
                     .foregroundStyle(.secondary)
             }
 
             // Weather icon and temp
             Image(systemName: weather.sfSymbolName)
+                .font(.system(size: 16))
             if let temp = weather.temperatureC {
                 Text("\(Int(round(temp)))°")
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
             }
 
             // AQI
             if let aqi = weather.airQualityIndex {
-                Text("|")
+                Text("·")
                     .foregroundStyle(.secondary)
 
                 Circle()
                     .fill(weather.aqiColor)
-                    .frame(width: 12, height: 12)
+                    .frame(width: 10, height: 10)
                 Text("AQI \(aqi)")
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
         }
-        .font(.subheadline)
     }
 
     private var expandedView: some View {

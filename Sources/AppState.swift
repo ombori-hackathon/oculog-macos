@@ -20,6 +20,7 @@ class AppState: ObservableObject {
     @Published var loadingState: LoadingState = .loading
     @Published var logs: [ConditionLog] = []
     @Published var apiStatus: String = "Checking..."
+    @Published var isLoadingLogs: Bool = false
 
     // Modal state
     @Published var isShowingLogForm: Bool = false
@@ -35,6 +36,10 @@ class AppState: ObservableObject {
     @Published var currentPage: Int = 1
     @Published var totalPages: Int = 1
     @Published var totalLogs: Int = 0
+
+    // Sort state
+    @Published var sortField: SortField = .date
+    @Published var sortOrder: SortOrder = .desc
 
     var effectiveStartDate: Date {
         switch dateFilterPreset {
@@ -136,8 +141,12 @@ class AppState: ObservableObject {
         fetchWeather(for: location)
     }
 
+    private let minimumLoadingDuration: TimeInterval = 3.0
+
     func refreshLogs(page: Int = 1) async {
         listError = nil
+        isLoadingLogs = true
+        let startTime = Date()
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -146,6 +155,8 @@ class AppState: ObservableObject {
         components.queryItems = [
             URLQueryItem(name: "start_date", value: formatter.string(from: effectiveStartDate)),
             URLQueryItem(name: "end_date", value: formatter.string(from: effectiveEndDate)),
+            URLQueryItem(name: "sort_by", value: sortField.rawValue),
+            URLQueryItem(name: "order", value: sortOrder.rawValue),
             URLQueryItem(name: "page", value: String(page)),
             URLQueryItem(name: "page_size", value: "50"),
         ]
@@ -169,11 +180,32 @@ class AppState: ObservableObject {
         } catch {
             listError = "Failed to load logs: \(error.localizedDescription)"
         }
+
+        // Ensure minimum loading duration for smooth UX
+        let elapsed = Date().timeIntervalSince(startTime)
+        let remaining = minimumLoadingDuration - elapsed
+        if remaining > 0 {
+            try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+        }
+        isLoadingLogs = false
     }
 
     func goToPage(_ page: Int) async {
         guard page >= 1 && page <= totalPages else { return }
         await refreshLogs(page: page)
+    }
+
+    func setSort(field: SortField) async {
+        if sortField == field {
+            // Toggle order if same field
+            sortOrder = sortOrder.toggled
+        } else {
+            // New field: default to descending
+            sortField = field
+            sortOrder = .desc
+        }
+        // Reset to page 1 and refresh
+        await refreshLogs(page: 1)
     }
 
     func createLog(_ log: ConditionLogCreate) async throws -> ConditionLog {

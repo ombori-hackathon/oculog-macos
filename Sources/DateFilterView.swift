@@ -11,21 +11,22 @@ struct DateFilterView: View {
         Button {
             showingPopover.toggle()
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
                 Image(systemName: "calendar")
+                    .font(.system(size: 16))
                 Text(appState.dateFilterPreset.rawValue)
+                    .font(.system(size: 14, weight: .medium))
                 Image(systemName: "chevron.down")
-                    .font(.caption)
+                    .font(.system(size: 11))
             }
-            .font(.subheadline)
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
         .popover(isPresented: $showingPopover) {
             filterPopoverContent
-                .frame(width: 280)
+                .frame(width: 300)
         }
     }
 
