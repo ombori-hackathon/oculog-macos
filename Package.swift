@@ -7,7 +7,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "OculogClient",
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .copy("../Resources/Assets.xcassets")
+            ]
         ),
     ]
 )
