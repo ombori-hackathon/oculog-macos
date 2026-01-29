@@ -35,19 +35,25 @@ struct SplashView: View {
                 .frame(height: 100)
 
                 // Branding
-                Text("OCULOG")
-                    .font(.system(size: 28, weight: .light, design: .monospaced))
-                    .tracking(12)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.5, green: 0.2, blue: 0.9),
-                                Color(red: 0.0, green: 0.8, blue: 0.8)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
+                VStack(spacing: 8) {
+                    Text("OCULOG")
+                        .font(.system(size: 28, weight: .light, design: .monospaced))
+                        .tracking(12)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.5, green: 0.2, blue: 0.9),
+                                    Color(red: 0.0, green: 0.8, blue: 0.8)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                    )
+
+                    Text("v\(AppVersion.version)")
+                        .font(.system(size: 14, weight: .light, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
 
                 Spacer()
             }
